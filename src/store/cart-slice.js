@@ -33,7 +33,9 @@ const cartSlice = createSlice({
 			);
 
 			if (state.items[idx].quantity === 1) {
-				state.items.splice(idx, 1);
+				state.items = state.items.filter(
+					(item) => item.id !== action.payload.id
+				);
 			} else {
 				state.items[idx].quantity -= 1;
 				state.items[idx].total -= action.payload.price;

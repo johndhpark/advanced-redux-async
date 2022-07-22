@@ -1,40 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { cartActions } from "../../store/cart-slice.js";
+import { fetchProducts } from "../../store/products-slice";
 import ProductItem from "./ProductItem";
 import classes from "./Products.module.css";
-import { useDispatch } from "react-redux";
-import { cartActions } from "../../store/cart-slice.js";
 
 const Products = () => {
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
+  const { products, isLoading, error } = useSelector((state) => state.products);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    async function fetchProducts() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(
-          "https://redux-cart-86616-default-rtdb.firebaseio.com/products.json"
-        );
-
-        if (!response.ok) throw new Error("Something went wrong");
-
-        const data = await response.json();
-
-        setProducts(data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchProducts();
-  }, []);
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   const addToCartHandler = (product) => {
     dispatch(cartActions.addItem(product));
