@@ -1,9 +1,28 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const initialState = {
 	items: [],
 	count: 0,
 };
+
+const fetchCart = createAsyncThunk(
+	"carts/fetchCart",
+	async (_, { rejectWithValue }) => {
+		try {
+			const response = await fetch(
+				"https://redux-cart-86616-default-rtdb.firebaseio.com/carts.json"
+			);
+
+			if (!response.ok) throw new Error("Something went wrong");
+
+			const data = await response.json();
+
+			return data;
+		} catch (error) {
+			return rejectWithValue(error.message);
+		}
+	}
+);
 
 const cartSlice = createSlice({
 	name: "cart",
@@ -42,6 +61,22 @@ const cartSlice = createSlice({
 			}
 
 			state.count -= 1;
+		},
+		extraReducers: (builder) => {
+			builder
+				.addCase(fetchCart.pending, (state, action) => {
+					state.isLoading = true;
+				})
+				.addCase(fetchCart.fulfilled, (state, action) => {
+					state.items = action.payload;
+					state.isLoading = false;
+					state.error = null;
+				})
+				.addCase(fetchCart.rejected, (state, action) => {
+					state.items = [];
+					state.isLoading = false;
+					state.error = action.payload;
+				});
 		},
 	},
 });
