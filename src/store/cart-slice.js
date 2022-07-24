@@ -1,25 +1,107 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { uiActions } from "./ui-slice";
 
 const initialState = {
 	items: [],
+	isLoading: false,
+	error: null,
 	count: 0,
 };
 
-const fetchCart = createAsyncThunk(
-	"carts/fetchCart",
-	async (_, { rejectWithValue }) => {
+export const fetchCart = createAsyncThunk(
+	"cart/fetchCart",
+	async (_, thunkAPI) => {
+		const { dispatch } = thunkAPI;
+
+		dispatch(
+			uiActions.showNotification({
+				status: "pending",
+				title: "Fetching...",
+				message: "Fetching cart data!",
+			})
+		);
+
 		try {
 			const response = await fetch(
-				"https://redux-cart-86616-default-rtdb.firebaseio.com/carts.json"
+				"https://redux-cart-86616-default-rtdb.firebaseio.com/cart.json"
 			);
 
 			if (!response.ok) throw new Error("Something went wrong");
 
 			const data = await response.json();
 
+			dispatch(
+				uiActions.showNotification({
+					status: "success",
+					title: "Fetched",
+					message: "Successfully fetched cart data!",
+				})
+			);
+
 			return data;
 		} catch (error) {
-			return rejectWithValue(error.message);
+			dispatch(
+				uiActions.showNotification({
+					status: "error",
+					title: "Failed",
+					message: "Failed to fetch cart data.",
+				})
+			);
+
+			return error.message;
+		}
+	}
+);
+
+export const addToCart = createAsyncThunk(
+	"cart/addToCart",
+	async (newItem, thunkAPI) => {
+		const { dispatch, getState } = thunkAPI;
+
+		dispatch(cartActions.addItem(newItem));
+		const state = getState();
+		const { items, count } = state.cart;
+
+		try {
+			const response = await fetch(
+				"https://redux-cart-86616-default-rtdb.firebaseio.com/cart.json",
+				{
+					method: "PUT",
+					"Content-Type": "application/json",
+					body: JSON.stringify({ items, count }),
+				}
+			);
+
+			if (!response.ok) throw new Error("Something went wrong");
+		} catch (error) {
+			return error.message;
+		}
+	}
+);
+
+export const removeFromCart = createAsyncThunk(
+	"cart/removeFromCart",
+	async (product, thunkAPI) => {
+		const { dispatch, getState } = thunkAPI;
+
+		dispatch(cartActions.removeItem(product));
+
+		const state = getState();
+		const { items, count } = state.cart;
+
+		try {
+			const response = await fetch(
+				"https://redux-cart-86616-default-rtdb.firebaseio.com/cart.json",
+				{
+					method: "PUT",
+					"Content-Type": "application/json",
+					body: JSON.stringify({ items, count }),
+				}
+			);
+
+			if (!response.ok) throw new Error("Something went wrong");
+		} catch (error) {
+			return error.message;
 		}
 	}
 );
@@ -62,22 +144,24 @@ const cartSlice = createSlice({
 
 			state.count -= 1;
 		},
-		extraReducers: (builder) => {
-			builder
-				.addCase(fetchCart.pending, (state, action) => {
-					state.isLoading = true;
-				})
-				.addCase(fetchCart.fulfilled, (state, action) => {
-					state.items = action.payload;
-					state.isLoading = false;
-					state.error = null;
-				})
-				.addCase(fetchCart.rejected, (state, action) => {
-					state.items = [];
-					state.isLoading = false;
-					state.error = action.payload;
-				});
-		},
+	},
+	extraReducers: (builder) => {
+		builder
+			.addCase(fetchCart.pending, (state) => {
+				state.isLoading = true;
+			})
+			.addCase(fetchCart.fulfilled, (state, action) => {
+				state.items = action.payload.items ?? [];
+				state.count = action.payload.count;
+				state.isLoading = false;
+				state.error = null;
+			})
+			.addCase(fetchCart.rejected, (state, action) => {
+				state.items = [];
+				state.count = 0;
+				state.isLoading = false;
+				state.error = action.payload;
+			});
 	},
 });
 

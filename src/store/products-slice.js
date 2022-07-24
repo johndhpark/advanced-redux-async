@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 export const fetchProducts = createAsyncThunk(
 	"products/fetchProducts",
-	async (_, { rejectWithValue }) => {
+	async () => {
 		try {
 			const response = await fetch(
 				"https://redux-cart-86616-default-rtdb.firebaseio.com/products.json"
@@ -14,7 +14,7 @@ export const fetchProducts = createAsyncThunk(
 
 			return data;
 		} catch (error) {
-			return rejectWithValue(error.message);
+			return error.message;
 		}
 	}
 );
@@ -29,7 +29,7 @@ const productsSlice = createSlice({
 	reducers: {},
 	extraReducers: (builder) => {
 		builder
-			.addCase(fetchProducts.pending, (state, action) => {
+			.addCase(fetchProducts.pending, (state) => {
 				state.isLoading = true;
 			})
 			.addCase(fetchProducts.fulfilled, (state, action) => {

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { cartActions } from "../../store/cart-slice.js";
+import { addToCart } from "../../store/cart-slice.js";
 import { fetchProducts } from "../../store/products-slice";
 import ProductItem from "./ProductItem";
 import classes from "./Products.module.css";
@@ -14,7 +14,7 @@ const Products = () => {
   }, [dispatch]);
 
   const addToCartHandler = (product) => {
-    dispatch(cartActions.addItem(product));
+    dispatch(addToCart(product));
   };
 
   const renderProducts = products.map((product) => (
